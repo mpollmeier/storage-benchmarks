@@ -11,7 +11,13 @@ object MVStoreBenchmark extends App {
   val mvstoreFile = Files.createTempFile(getClass.getName, "bin")
   val mvstore = new MVStore.Builder()
     .fileName(mvstoreFile.toAbsolutePath.toString)
-    .autoCommitBufferSize(1024 * 8)
+    .autoCommitBufferSize(1024 * 8) //best option
+//    .autoCommitBufferSize(1024 * 8 * 8) //slower
+//    .autoCommitDisabled() //also slower than 8*1024
+
+//    .cacheConcurrency(8) // no difference
+//    .cacheSize(65000) //slower than default
+//    .cacheSize(65000 * 8) //slower than default
     .open()
   val mvMap: MVMap[Long, Array[Byte]] = mvstore.openMap("nodes")
 
