@@ -17,7 +17,10 @@ object MVStoreBenchmark extends App {
 
   Benchmark.run(
     put = (id, bytes) => mvMap.put(id, bytes),
-    closeStorage = mvstore.close
+    closeStorage = () => {
+      mvstore.close
+      mvstoreFile.toFile.delete
+    }
   )
 
 }
