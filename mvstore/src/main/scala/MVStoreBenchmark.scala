@@ -3,6 +3,10 @@ import java.nio.file.Files
 import org.h2.mvstore.{MVMap, MVStore}
 
 object MVStoreBenchmark extends App {
+  val threadCount = args match {
+    case Array(threadCount) => threadCount.toInt
+    case _ => throw new AssertionError("expected exactly one argument: threadCount")
+  }
 
   val mvstoreFile = Files.createTempFile(getClass.getName, "bin")
   val mvstore = new MVStore.Builder()
@@ -16,6 +20,7 @@ object MVStoreBenchmark extends App {
   }
 
   Benchmark.run(
+    threadCount,
     put = (id, bytes) => mvMap.put(id, bytes),
     closeStorage = () => {
       mvstore.close
