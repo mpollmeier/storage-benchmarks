@@ -1,0 +1,4 @@
+name := "common"
+
+libraryDependencies ++= Seq(
+)
