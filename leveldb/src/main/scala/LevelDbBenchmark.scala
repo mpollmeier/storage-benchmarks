@@ -19,11 +19,12 @@ object LevelDbBenchmark extends App {
   val storageFile = Files.createTempDirectory(getClass.getName)
   val options = new Options()
     .createIfMissing(true)
+    .cacheSize(100 * 1048576) //100mb
+//    .compressionType(CompressionType.NONE) // no influence on performance
 
   val db = factory.open(storageFile.toFile, options)
 
   val start = System.currentTimeMillis
-//  val futures = 0.until(2).map(fileName).map { fileName =>
   val futures = 0.until(FileCount).map(fileName).map { fileName =>
     executorService.submit(new Runnable {
       override def run(): Unit = {
