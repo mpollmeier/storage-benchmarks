@@ -1,5 +1,6 @@
-import java.nio.file.Files
+import java.nio.file.{Files, Paths}
 
+import PlainFileBenchmark.getClass
 import org.h2.mvstore.{MVMap, MVStore}
 
 object MVStoreBenchmark extends App {
@@ -8,7 +9,7 @@ object MVStoreBenchmark extends App {
     case _ => throw new AssertionError("expected exactly one argument: threadCount")
   }
 
-  val mvstoreFile = Files.createTempFile(getClass.getName, "bin")
+  val mvstoreFile = Files.createTempFile(Paths.get("target"), getClass.getName, "bin")
   val mvstore = new MVStore.Builder()
     .fileName(mvstoreFile.toAbsolutePath.toString)
     .autoCommitBufferSize(1024 * 8) //best option
