@@ -94,9 +94,6 @@ object MapDbBenchmark extends App {
   futures.foreach(_.get)
   println("finished all futures - closing storage now")
 
-//  val b: TreeMap = ???
-//  b.putAll(b)
-
 //  trees.result.toList.reduce(_.merge())
 
   // TODO combine all trees
