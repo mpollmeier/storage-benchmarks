@@ -9,6 +9,7 @@ lazy val mvstore = project.in(file("mvstore")).dependsOn(common)
 lazy val leveldb = project.in(file("leveldb")).dependsOn(common)
 lazy val mapdb = project.in(file("mapdb")).dependsOn(common)
 lazy val xodus = project.in(file("xodus")).dependsOn(common)
+lazy val lmdb = project.in(file("lmdb")).dependsOn(common)
 
 ThisBuild/resolvers ++= Seq(
   Resolver.mavenLocal,
