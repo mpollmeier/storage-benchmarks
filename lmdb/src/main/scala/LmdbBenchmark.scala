@@ -3,7 +3,7 @@ import java.nio.ByteBuffer
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
-import java.nio.ByteBuffer.allocateDirect
+import java.nio.ByteBuffer
 
 import org.lmdbjava.DbiFlags.MDB_CREATE
 import org.lmdbjava.DbiFlags.MDB_DUPSORT
@@ -55,8 +55,8 @@ object LmdbBenchmark extends App {
 //  db.put(key, value)
 
   val start = System.currentTimeMillis
-  val futures = 0.until(FileCount).map(fileName).map { fileName =>
-//    val futures = 0.until(2).map(fileName).map { fileName =>
+//  val futures = 0.until(FileCount).map(fileName).map { fileName =>
+    val futures = 0.until(2).map(fileName).map { fileName =>
     executorService.submit(new Runnable {
       override def run = {
         val fileIn = new FileInputStream(fileName)
@@ -65,12 +65,11 @@ object LmdbBenchmark extends App {
         while (valueCount < ValueCountPerFile) {
           val bytesRead = fileIn.read(tmpArray)
           assert(bytesRead == ValueByteCount, s"expected $ValueByteCount bytes to be read, but only got $bytesRead")
-          val key = allocateDirect(env.getMaxKeySize)
 //          val key = ByteBuffer.allocateDirect(java.lang.Long.BYTES)
 //          key.putLong(0, currId.getAndIncrement).flip
-//          key.put("greeting".getBytes("UTF-8")).flip
+          val key = ByteBuffer.allocateDirect(env.getMaxKeySize)
           key.put(currId.toString.getBytes("UTF-8")).flip
-          val value = allocateDirect(tmpArray.length)
+          val value = ByteBuffer.allocateDirect(tmpArray.length)
           value.put(tmpArray).flip
           db.put(key, value)
           valueCount += 1
@@ -86,7 +85,7 @@ object LmdbBenchmark extends App {
   env.close
 //
   val elapsedTime = System.currentTimeMillis - start
-    assert(currId.get == 8192000, s"expected to have handled 8192000 entries, but actually handled $currId")
+//  assert(currId.get == 8192000, s"expected to have handled 8192000 entries, but actually handled $currId")
   println(s"$threadCount threads: completed in ${elapsedTime}ms. storage=$storageFile")
   executorService.shutdown()
 }

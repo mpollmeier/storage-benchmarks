@@ -1,6 +1,7 @@
 import java.io.{File, FileInputStream}
 import java.nio.file.{Files, Paths}
-import java.util.concurrent.Executors
+import java.util
+import java.util.concurrent.{ConcurrentLinkedQueue, Executors}
 import java.util.concurrent.atomic.AtomicLong
 
 import jetbrains.exodus.ArrayByteIterable
@@ -19,28 +20,34 @@ object XodusBenchmark extends App {
   val storageFile = Files.createTempDirectory(Paths.get("target"), getClass.getName)
   val env = Environments.newInstance(storageFile.toFile)
 
+  val bufferPoolSize = threadCount * ValueCountPerFile
+  val bufferPool = new ConcurrentLinkedQueue[Array[Byte]]
+  0.until(bufferPoolSize).foreach { _ =>
+    val buffer = new Array[Byte](ValueByteCount)
+    bufferPool.add(buffer)
+  }
+
   val start = System.currentTimeMillis
   val futures = 0.until(FileCount).map { fileIdx =>
     executorService.submit(new Runnable {
       override def run = {
         val fileIn = new FileInputStream(fileName(fileIdx))
         var valueCount = 0
-        val tmpArray = new Array[Byte](ValueByteCount)
-//        val byteUtils = new ByteUtils
+        val bufferReturnPool = new util.LinkedList[Array[Byte]]()
         env.executeInTransaction { txn =>
-          val store = env.openStore(s"nodes-$fileIdx", StoreConfig.WITHOUT_DUPLICATES, txn)
-          while (valueCount < ValueCountPerFile) {
+          val store = env.openStore("nodes", StoreConfig.WITHOUT_DUPLICATES, txn)
+          0.until(ValueCountPerFile).foreach { _ =>
+            val tmpArray = bufferPool.poll()
+            bufferReturnPool.add(tmpArray)
             val bytesRead = fileIn.read(tmpArray)
-            assert(bytesRead == ValueByteCount, s"expected $ValueByteCount bytes to be read, but only got $bytesRead")
+//            assert(bytesRead == ValueByteCount, s"expected $ValueByteCount bytes to be read, but only got $bytesRead")
             val idBytes = new ArrayByteIterable(new ByteUtils().longToBytes(currId.getAndIncrement))
-//            val idBytes = new ArrayByteIterable(byteUtils.longToBytes(currId.getAndIncrement))
-//            store.put(txn, idBytes, new ArrayByteIterable(tmpArray))
             store.add(txn, idBytes, new ArrayByteIterable(tmpArray))
             valueCount += 1
           }
           txn.flush
           txn.commit()
-//          println(store.getName + " " + store.count(txn))
+          bufferPool.addAll(bufferReturnPool)
           store.close
         }
         fileIn.close
@@ -54,12 +61,9 @@ object XodusBenchmark extends App {
   env.close
 
   val elapsedTime = System.currentTimeMillis - start
-    assert(currId.get == 8192000, s"expected to have handled 8192000 entries, but actually handled $currId")
-  println(s"$threadCount threads: completed in ${elapsedTime}ms. storage=$storageFile")
+//    assert(currId.get == 8192000, s"expected to have handled 8192000 entries, but actually handled $currId")
+  println(s"$threadCount threads: completed in ${elapsedTime}ms. storage=$storageFile. currId=${currId.get}")
   executorService.shutdown()
-
-//  Thread.sleep(10000)
-
 }
 
 object XodusRead extends App {
